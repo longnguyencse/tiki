@@ -73,20 +73,22 @@ class Sol:
         self._ware_house.append(ware_house)
 
     @exception_logging
-    def make_choose_ware_house(self, order):
+    def make_choose_ware_house(self, order, rs=None):
         """
         order = { address: ADDRESS.HANOI_ADDR, items: { Item.books: 2, Item.pens: 3}}
         :param order:
         :return:
         """
+        if not rs:
+            rs = []
         candidates = []
         order_original = order.copy()
-        rs = []
         for ware_house in self._ware_house:
             for name, quality in order_original[self.ITEMS].items():
-                if ware_house.get(self.ITEMS, {}).get(name, 0) > 0:
-                    candidates.append(ware_house)
-                    break
+                if quality > 0:
+                    if ware_house.get(self.ITEMS, {}).get(name, 0) > 0:
+                        candidates.append(ware_house)
+                        break
         return self.__check_condition(candidates, order, rs)
 
     @exception_logging
@@ -99,10 +101,12 @@ class Sol:
         """
         try:
             ware_house = self.__check_first_condition(candidates, order)
+            print(ware_house)
             if not ware_house:
                 print(' STRAGE: check warehouse none --> need to check')
                 return
             for name, quality in order.get(self.ITEMS, {}).items():
+                # for ware_house in ware_houses:
                 if name in ware_house.get(self.ITEMS, {}).keys():
                     stock = float(ware_house.get(self.ITEMS).get(name))
                     amount = float(order.get(self.ITEMS).get(name))
@@ -119,7 +123,7 @@ class Sol:
                     rs.append({self.WH_NAME: ware_house[self.WH_NAME], self.ITEMS: {name: max_supply}})
             for name, quality in order.get(self.ITEMS, {}).items():
                 if quality > 0:
-                    self.__check_condition(candidates, order, rs)
+                    self.make_choose_ware_house(order, rs)
             # end
             print(f'END sol, result is {rs}')
             return rs
@@ -140,8 +144,10 @@ class Sol:
             if order_addr == i[self.ADDRESS]:
                 next_candidates.append(i)
         print(f'#1 {next_candidates}')
+        if not next_candidates:
+            return self.__check_second_condition(candidates, order)
         if 1 == len(next_candidates):
-            return next_candidates
+            return next_candidates[0]
         else:
             # next condition
             return self.__check_second_condition(next_candidates, order)
@@ -163,10 +169,10 @@ class Sol:
             if is_add:
                 next_candidates.append(ware_house)
         print(f'#2 {next_candidates}')
-        if candidates and not next_candidates:
-            return candidates[0]
+        if not next_candidates:
+            return self.__check_third_condition(candidates, order)
         if 1 == len(next_candidates):
-            return next_candidates
+            return next_candidates[0]
         else:
             # next condition
             return self.__check_third_condition(next_candidates, order)
