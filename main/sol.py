@@ -1,8 +1,13 @@
+""""
+Python 3.8
+"""
+
 import traceback
 import functools
 import logging
 import os
 import traceback
+
 
 def create_logger():
     """
@@ -41,6 +46,7 @@ def exception_logging(function):
             print('{}___/n__{}'.format(err, tb))
             # re-raise the exception
             raise
+
     return wrapper
 
 
@@ -50,6 +56,7 @@ class ADDRESS:
     DANANG_ADDR = 'DaNang'
     HUE_ADDR = 'Hue'
 
+
 class Item:
     BOOK = 'book'
     PEN = 'pen'
@@ -58,7 +65,7 @@ class Item:
 class Sol:
     ADDRESS = 'address'
     ITEMS = 'items'
-    WH_NAME = 'wh_name'
+    WH_NAME = 'warehouse_name'
 
     def __init__(self):
         self._ware_house = []
@@ -70,13 +77,16 @@ class Sol:
         :param ware_house:
         :return:
         """
+        if ware_house in self._ware_house:
+            print(f'Skipp add warehouse, because exits {ware_house}')
+            return
         self._ware_house.append(ware_house)
 
     @exception_logging
     def make_choose_ware_house(self, order, rs=None):
         """
         order = { address: ADDRESS.HANOI_ADDR, items: { Item.books: 2, Item.pens: 3}}
-        :param order:
+        :param order: , rs: result
         :return:
         """
         if not rs:
@@ -101,9 +111,8 @@ class Sol:
         """
         try:
             ware_house = self.__check_first_condition(candidates, order)
-            print(ware_house)
             if not ware_house:
-                print(' STRAGE: check warehouse none --> need to check')
+                print('STRANGE: check warehouse none --> need to check')
                 return
             for name, quality in order.get(self.ITEMS, {}).items():
                 # for ware_house in ware_houses:
@@ -125,7 +134,7 @@ class Sol:
                 if quality > 0:
                     self.make_choose_ware_house(order, rs)
             # end
-            print(f'END sol, result is {rs}')
+            # print(f'END sol, result is {rs}')
             return rs
         except Exception:
             tb = traceback.format_exc()
@@ -140,13 +149,15 @@ class Sol:
         """
         next_candidates = []
         order_addr = order[self.ADDRESS]
-        for i in candidates:
-            if order_addr == i[self.ADDRESS]:
-                next_candidates.append(i)
-        print(f'#1 {next_candidates}')
+        for candidate in candidates:
+            if order_addr == candidate[self.ADDRESS]:
+                next_candidates.append(candidate)
+        # print(f'#1 {next_candidates}')
         if not next_candidates:
+            # no had candidate
             return self.__check_second_condition(candidates, order)
         if 1 == len(next_candidates):
+            # no need to check next condition
             return next_candidates[0]
         else:
             # next condition
@@ -168,7 +179,7 @@ class Sol:
                     is_add = False
             if is_add:
                 next_candidates.append(ware_house)
-        print(f'#2 {next_candidates}')
+        # print(f'#2 {next_candidates}')
         if not next_candidates:
             return self.__check_third_condition(candidates, order)
         if 1 == len(next_candidates):
@@ -193,25 +204,27 @@ class Sol:
                     if ware_house[self.ITEMS][name] > max_stock:
                         max_stock = ware_house[self.ITEMS][name]
                         ware_house_candidate = ware_house
-        print(f'#3 {ware_house_candidate}')
+        # print(f'#3 {ware_house_candidate}')
         if not ware_house_candidate and candidates:
             return candidates[0]
         return ware_house_candidate
+
 
 if __name__ == '__main__':
     sol = Sol()
     """ 
     Case 1
     """
-    # sol.add_ware_house({Sol.WH_NAME: 'A', Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.BOOK: 1}})
-    # sol.add_ware_house({Sol.WH_NAME: 'B', Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.BOOK: 3, Item.PEN: 3}})
-    # sol.add_ware_house({Sol.WH_NAME: 'C', Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.BOOK: 10, Item.PEN: 7}})
+    sol.add_ware_house({Sol.WH_NAME: 'A', Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.BOOK: 1}})
+    sol.add_ware_house({Sol.WH_NAME: 'B', Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.BOOK: 3, Item.PEN: 3}})
+    sol.add_ware_house({Sol.WH_NAME: 'C', Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.BOOK: 10, Item.PEN: 7}})
+    sol.add_ware_house({Sol.WH_NAME: 'D', Sol.ADDRESS: ADDRESS.HCM_ADDR, Sol.ITEMS: {Item.BOOK: 30, Item.PEN: 70}})
     # sol.add_ware_house({Sol.WH_NAME: 'D', Sol.ADDRESS: ADDRESS.HCM_ADDR, Sol.ITEMS: {Item.BOOK: 30, Item.PEN: 70}})
     """
     Case 2
     """
-    sol.add_ware_house({Sol.WH_NAME: 'A', Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.BOOK: 1}})
-    sol.add_ware_house({Sol.WH_NAME: 'B', Sol.ADDRESS: ADDRESS.HCM_ADDR, Sol.ITEMS: {Item.BOOK: 10}})
-    sol.add_ware_house({Sol.WH_NAME: 'C', Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.PEN: 5}})
+    # sol.add_ware_house({Sol.WH_NAME: 'A', Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.BOOK: 1}})
+    # sol.add_ware_house({Sol.WH_NAME: 'B', Sol.ADDRESS: ADDRESS.HCM_ADDR, Sol.ITEMS: {Item.BOOK: 10}})
+    # sol.add_ware_house({Sol.WH_NAME: 'C', Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.PEN: 5}})
     rs = sol.make_choose_ware_house({Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.BOOK: 2, Item.PEN: 3}})
     print(f'# Result ware house and quality of item for order \n {rs}')
