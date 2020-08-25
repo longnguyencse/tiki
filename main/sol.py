@@ -39,7 +39,7 @@ class Sol:
         rs = []
         for ware_house in self._ware_house:
             candidates.append(ware_house)
-            self.__check_condition(candidates, order, rs)
+        self.__check_condition(candidates, order, rs)
 
     def __check_condition(self, candidates, order, rs):
         """
@@ -74,7 +74,7 @@ class Sol:
             # end
             print(f'END sol, result is {rs}')
         except Exception:
-            tb = traceback.format_exec()
+            tb = traceback.format_exc()
             print(f'ERROR {tb}')
 
     def __check_first_condition(self, candidates, order):
@@ -92,21 +92,45 @@ class Sol:
             return next_candidates
         else:
             # next condition
-            return self.__check_condition(next_candidates, order)
+            return self.__check_second_condition(next_candidates, order)
 
     def __check_second_condition(self, candidates, order):
         """
         check second condition: the warehouse has all product of order
         :return:
         """
-        pass
+        next_candidates = []
+        for ware_house in candidates:
+            is_add = True
+            for name, quality in order.items():
+                if 0 == quality:
+                    continue
+                if not ware_house.get(self.ITEMS, {}).get(name, 0):
+                    is_add = False
+            if is_add:
+                next_candidates.append(ware_house)
+        if 1 == len(next_candidates):
+            return next_candidates
+        else:
+            # next condition
+            return self.__check_third_condition(next_candidates, order)
 
     def __check_third_condition(self, candidates, order):
         """
         check the warehouse has the largest quantity of product.
         :return:
         """
-        pass
+        max_stock = 0
+        ware_house_candidate = {}
+        for ware_house in candidates:
+            for name, quality in order.items():
+                if 0 == quality:
+                    continue
+                if ware_house.get(self.ITEMS, {}).get(name, 0):
+                    if ware_house[self.ITEMS][name] > max_stock:
+                        max_stock = ware_house[self.ITEMS][name]
+                        ware_house_candidate = ware_house
+        return ware_house_candidate
 
 if __name__ == '__main__':
     sol = Sol()
