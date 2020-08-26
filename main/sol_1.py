@@ -63,9 +63,9 @@ class Item:
 
 
 class Condition:
-    SAME_ADDR = 'self.check_same_addr_condition'
-    HAS_ALL_PRODUCT = 'self.check_has_all_product_condition'
-    LARGEST_QUANTITY = 'self.check_largest_quantity_condition'
+    SAME_ADDR = 'self.__check_same_addr_condition'
+    HAS_ALL_PRODUCT = 'self.__check_has_all_product_condition'
+    LARGEST_QUANTITY = 'self.__check_largest_quantity_condition'
 
 class Sol:
     ADDRESS = 'address'
@@ -124,7 +124,7 @@ class Sol:
         :return:
         """
         try:
-            ware_house = self.__get_warehouse_has_high_priority(candidates, order)
+            ware_house = self.__check_same_addr_condition(candidates, order)
             if not ware_house:
                 print('STRANGE: check warehouse none --> need to check')
                 return
@@ -155,37 +155,7 @@ class Sol:
             print(f'ERROR {tb}')
 
     @exception_logging
-    def __get_warehouse_has_high_priority(self, candidates, order):
-        """
-        :param candidates:
-        :param order:
-        :return:
-        """
-        len_priorities = len(self._priorities)
-        next_candidates = candidates
-        candidate = {}
-        for i in range(0, len(self._priorities)):
-            rs = eval(f'{self._priorities[i]}(next_candidates, order)')
-            # print(f'Rs is {rs}')
-            if len_priorities - 1 == i:
-                # last condition
-                if rs:
-                    candidate = rs[0]
-                else:
-                    candidate = next_candidates[0]
-            else:
-                # next condition
-                # assigment
-                if len(rs) == 1:
-                    candidate = rs[0]
-                    break
-                # else
-                if rs:
-                    next_candidates = rs
-        return candidate
-
-    @exception_logging
-    def check_same_addr_condition(self, candidates, order):
+    def __check_same_addr_condition(self, candidates, order):
         """
         check first condition: the warehouse has all product of order
         if has 1 candidate, return candidate, else check next condition
@@ -196,10 +166,19 @@ class Sol:
         for candidate in candidates:
             if order_addr == candidate[self.ADDRESS]:
                 next_candidates.append(candidate)
-        return next_candidates
+        # print(f'#1 {next_candidates}')
+        if not next_candidates:
+            # no had candidate
+            return self.__check_has_all_product_condition(candidates, order)
+        if 1 == len(next_candidates):
+            # no need to check next condition
+            return next_candidates[0]
+        else:
+            # next condition
+            return self.__check_has_all_product_condition(next_candidates, order)
 
     @exception_logging
-    def check_has_all_product_condition(self, candidates, order):
+    def __check_has_all_product_condition(self, candidates, order):
         """
         check second condition: the warehouse has all product of order
         :return:
@@ -214,30 +193,35 @@ class Sol:
                     is_add = False
             if is_add:
                 next_candidates.append(ware_house)
-        return next_candidates
+        # print(f'#2 {next_candidates}')
+        if not next_candidates:
+            return self.__check_largest_quantity_condition(candidates, order)
+        if 1 == len(next_candidates):
+            return next_candidates[0]
+        else:
+            # next condition
+            return self.__check_largest_quantity_condition(next_candidates, order)
 
     @exception_logging
-    def check_largest_quantity_condition(self, candidates, order):
+    def __check_largest_quantity_condition(self, candidates, order):
         """
         check the warehouse has the largest quantity of product.
         :return:
         """
-        # get first quality
-        first_item = None
-        for name, quality in order[self.ITEMS].items():
-            if 0 == quality:
-                continue
-            first_item = name
-            # print(f'first name {first_item}')
-            break
         max_stock = 0
-        next_candidates = []
+        ware_house_candidate = {}
         for ware_house in candidates:
-            if ware_house.get(self.ITEMS, {}).get(first_item, 0):
-                if ware_house[self.ITEMS][first_item] > max_stock:
-                    max_stock = ware_house[self.ITEMS][first_item]
-                    next_candidates = [ware_house]
-        return next_candidates
+            for name, quality in order[self.ITEMS].items():
+                if 0 == quality:
+                    continue
+                if ware_house.get(self.ITEMS, {}).get(name, 0):
+                    if ware_house[self.ITEMS][name] > max_stock:
+                        max_stock = ware_house[self.ITEMS][name]
+                        ware_house_candidate = ware_house
+        # print(f'#3 {ware_house_candidate}')
+        if not ware_house_candidate and candidates:
+            return candidates[0]
+        return ware_house_candidate
 
 
 if __name__ == '__main__':
@@ -259,7 +243,6 @@ if __name__ == '__main__':
     """
     Adding filter conditions, decreasing priority
     """
-    sol.setter_priorities([Condition.SAME_ADDR, Condition.HAS_ALL_PRODUCT, Condition.LARGEST_QUANTITY])
-    # sol.setter_priorities([Condition.HAS_ALL_PRODUCT, Condition.LARGEST_QUANTITY])
+
     rs = sol.make_choose_ware_house({Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.BOOK: 2, Item.PEN: 3}})
     print(f'# Result ware house and quality of item for order \n {rs}')
