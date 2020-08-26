@@ -260,6 +260,7 @@ if __name__ == '__main__':
     Adding filter conditions, decreasing priority
     """
     sol.setter_priorities([Condition.SAME_ADDR, Condition.HAS_ALL_PRODUCT, Condition.LARGEST_QUANTITY])
+    # sol.setter_priorities([Condition.LARGEST_QUANTITY, Condition.SAME_ADDR, Condition.HAS_ALL_PRODUCT])
     # sol.setter_priorities([Condition.HAS_ALL_PRODUCT, Condition.LARGEST_QUANTITY])
     rs = sol.make_choose_ware_house({Sol.ADDRESS: ADDRESS.HANOI_ADDR, Sol.ITEMS: {Item.BOOK: 2, Item.PEN: 3}})
     print(f'# Result ware house and quality of item for order \n {rs}')
